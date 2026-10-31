@@ -12,14 +12,14 @@ layout="wide"
 )
 
 st.title("CogniStream")
+
 st.subheader(
 "Developer Flow State & Cognitive Load Analytics"
 )
 
 st.info(
 "Prototype analytics based on developer activity data. "
-"Focus and cognitive-load indicators are estimates, "
-"not definitive measurements of mental state."
+"Focus and cognitive-load indicators are estimates."
 )
 
 uploaded_file = st.file_uploader(
@@ -36,14 +36,15 @@ try:
         suffix=".csv",
         delete=False
     ) as temp_file:
+
         uploaded_file.seek(0)
         temp_file.write(uploaded_file.getvalue())
         temp_path = temp_file.name
 
     df = run_pipeline(temp_path)
 
-except Exception as exc:
-    st.error(f"Unable to process the uploaded dataset: {exc}")
+except Exception as error:
+    st.error(f"Unable to process uploaded data: {error}")
     df = None
 
 finally:
@@ -51,6 +52,7 @@ finally:
         os.remove(temp_path)
 
 if df is not None and not df.empty:
+
     required_columns = [
         "session_minutes",
         "switch_count",
@@ -59,14 +61,13 @@ if df is not None and not df.empty:
     ]
 
     missing_columns = [
-        column
-        for column in required_columns
+        column for column in required_columns
         if column not in df.columns
     ]
 
     if missing_columns:
         st.error(
-            "Processed data is missing required columns: "
+            "Missing processed columns: "
             + ", ".join(missing_columns)
         )
     else:
@@ -91,13 +92,15 @@ if df is not None and not df.empty:
 
         st.header("Flow State Analysis")
 
-        focus_counts = df["focus_indicator"].value_counts()
-        st.bar_chart(focus_counts)
+        st.bar_chart(
+            df["focus_indicator"].value_counts()
+        )
 
         st.header("Cognitive Load Analysis")
 
-        cognitive_load_counts = df["cognitive_load"].value_counts()
-        st.bar_chart(cognitive_load_counts)
+        st.bar_chart(
+            df["cognitive_load"].value_counts()
+        )
 
         st.header("Developer Activity Details")
 
@@ -108,8 +111,7 @@ if df is not None and not df.empty:
 
 else:
     st.warning(
-        "Unable to process the uploaded dataset. "
-        "Check the CSV format and pipeline configuration."
+        "Unable to process the uploaded dataset."
     )
 
 else:
