@@ -1,9 +1,9 @@
 """
-Cognistream - Developer Activity Monitor
+Cognistream - Activity Monitor with Database Integration
 """
 
-import csv
 from datetime import datetime
+from src.database import create_database, save_activity
 
 
 class ActivityMonitor:
@@ -14,21 +14,26 @@ class ActivityMonitor:
         self.error_count = 0
         self.break_count = 0
 
+        create_database()
+
     def start_session(self):
+
         self.session_start = datetime.now()
+
+        self.task_switches = 0
+        self.error_count = 0
+        self.break_count = 0
+
         print("Developer session started.")
 
     def record_task_switch(self):
         self.task_switches += 1
-        print("Task switch recorded.")
 
     def record_error(self):
         self.error_count += 1
-        print("Development error recorded.")
 
     def record_break(self):
         self.break_count += 1
-        print("Break recorded.")
 
     def end_session(self):
 
@@ -43,31 +48,18 @@ class ActivityMonitor:
         ).total_seconds() / 60
 
         data = {
-            "timestamp": self.session_start,
+            "timestamp": self.session_start.isoformat(),
             "session_minutes": round(duration, 2),
             "switch_count": self.task_switches,
             "error_count": self.error_count,
             "break_count": self.break_count
         }
 
-        with open(
-            "developer_activity.csv",
-            "a",
-            newline=""
-        ) as file:
+        save_activity(data)
 
-            writer = csv.DictWriter(
-                file,
-                fieldnames=data.keys()
-            )
+        self.session_start = None
 
-            if file.tell() == 0:
-                writer.writeheader()
-
-            writer.writerow(data)
-
-        print("Session completed.")
-        print("Activity saved successfully.")
+        print("Activity saved to database successfully.")
 
 
 if __name__ == "__main__":
@@ -75,7 +67,9 @@ if __name__ == "__main__":
     monitor = ActivityMonitor()
 
     monitor.start_session()
+
     monitor.record_task_switch()
     monitor.record_error()
     monitor.record_break()
+
     monitor.end_session()
