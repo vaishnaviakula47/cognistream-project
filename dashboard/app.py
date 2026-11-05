@@ -1,16 +1,20 @@
-
 import os
 import tempfile
 
-import pandas as pd
 import streamlit as st
-from dashboard.trend_view import show_activity_trends
-from dashboard.data_quality_view import show_data_quality
-from dashboard.activity_monitor_view import show_activity_monitor
+
 from src.main import run_pipeline
+
+from dashboard.activity_monitor_view import show_activity_monitor
+from dashboard.data_quality_view import show_data_quality
+from dashboard.trend_view import show_activity_trends
+from dashboard.report_view import show_report
+from dashboard.database_view import show_database_dashboard
+
 
 st.set_page_config(
     page_title="CogniStream Analytics",
+    page_icon="📊",
     layout="wide"
 )
 
@@ -18,18 +22,23 @@ st.title("CogniStream")
 st.subheader("Developer Flow State & Cognitive Load Analytics")
 
 st.info(
-    "Prototype analytics based on developer activity data. "
-    "Focus and cognitive-load indicators are estimates."
+    "CogniStream analyzes developer activity data to estimate "
+    "focus indicators, cognitive load, interruptions, and work patterns."
 )
+
+st.sidebar.title("Dashboard")
+st.sidebar.write("Upload your developer activity dataset to begin.")
 
 uploaded_file = st.file_uploader(
     "Upload Developer Activity CSV",
     type=["csv"]
 )
 
+df = None
+
 if uploaded_file is not None:
+
     temp_path = None
-    df = None
 
     try:
         with tempfile.NamedTemporaryFile(
@@ -37,11 +46,15 @@ if uploaded_file is not None:
             suffix=".csv",
             delete=False
         ) as temp_file:
+
             uploaded_file.seek(0)
             temp_file.write(uploaded_file.getvalue())
             temp_path = temp_file.name
 
         df = run_pipeline(temp_path)
+
+        if df is None or df.empty:
+            st.warning("No valid activity records found.")
 
     except Exception as error:
         st.error(f"Unable to process uploaded data: {error}")
@@ -50,58 +63,79 @@ if uploaded_file is not None:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
 
-    if df is not None and not df.empty:
-        required_columns = [
-            "session_minutes",
-            "switch_count",
-            "focus_indicator",
-            "cognitive_load"
-        ]
-
-        missing_columns = [
-            column for column in required_columns
-            if column not in df.columns
-        ]
-
-        if missing_columns:
-            st.error(
-                "Missing processed columns: "
-                + ", ".join(missing_columns)
-            )
-        else:
-            st.header("Developer Activity Overview")
-
-            col1, col2, col3 = st.columns(3)
-
-            col1.metric("Total Sessions", len(df))
-
-            col2.metric(
-                "Average Session",
-                f"{df['session_minutes'].mean():.2f} min"
-            )
-
-            col3.metric(
-                "Total Task Switches",
-                int(df["switch_count"].sum())
-            )
-
-            st.header("Flow State Analysis")
-            st.bar_chart(df["focus_indicator"].value_counts())
-
-            st.header("Cognitive Load Analysis")
-            st.bar_chart(df["cognitive_load"].value_counts())
-
-            st.header("Developer Activity Details")
-            st.dataframe(df, use_container_width=True)
-
-    else:
-        st.warning("Unable to process the uploaded dataset.")
-
 else:
-    st.info("Upload a CSV file to view analytics.")
+    st.info("Please upload your sample_activity.csv file.")
 
 st.divider()
-st.title("Developer Activity Monitoring")
-show_activity_monitor(df if uploaded_file is not None else None)
-show_data_quality(df if uploaded_file is not None else None)
-show_activity_trends(df if uploaded_file is not None else None)
+
+# 1. Developer Activity Overview
+
+st.header("Developer Activity Overview")
+
+if df is not None and not df.empty:
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Total Sessions", len(df))
+
+    col2.metric(
+        "Average Session",
+        f"{df['session_minutes'].mean():.2f} min"
+    )
+
+    col3.metric(
+        "Total Task Switches",
+        int(df["switch_count"].sum())
+    )
+
+    # 2. Flow State Analysis
+
+    st.header("Flow State Analysis")
+
+    st.bar_chart(df["focus_indicator"].value_counts())
+
+    # 3. Cognitive Load Analysis
+
+    st.header("Estimated Cognitive Load")
+
+    st.bar_chart(df["cognitive_load"].value_counts())
+
+    st.subheader("Processed Activity Records")
+
+    st.dataframe(df, use_container_width=True)
+
+st.divider()
+
+# 4. Activity Monitoring
+
+show_activity_monitor(df)
+
+st.divider()
+
+# 5. Data Quality
+
+show_data_quality(df)
+
+st.divider()
+
+# 6. Activity Trends
+
+show_activity_trends(df)
+
+st.divider()
+
+# 7. Report Generation
+
+show_report(df)
+
+st.divider()
+
+# 8. Database Dashboard
+
+show_database_dashboard()
+
+st.divider()
+
+st.caption(
+    "CogniStream | Developer Flow-State & Cognitive Load Analytics"
+)
