@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 from src.data_processor import (
@@ -11,78 +10,92 @@ from src.cognitive_load import estimate_cognitive_load
 
 
 def run_pipeline(file_path):
+
     df = load_activity_data(file_path)
 
     if df is None or df.empty:
         return None
-
-    # Map Vaishnavi's CSV column names to pipeline names.
-    column_mapping = {
-        "coding_minutes": "session_minutes",
-        "context_switches": "switch_count",
-    }
-    df = df.rename(columns=column_mapping)
 
     df = clean_activity_data(df)
 
     if df is None or df.empty:
         return None
 
-    required = {"session_minutes", "switch_count"}
+    # Map CSV column names to standard pipeline names.
+    column_mapping = {
+        "coding_minutes": "session_minutes",
+        "context_switches": "switch_count"
+    }
 
-    if not required.issubset(df.columns):
-        missing = required - set(df.columns)
-        raise ValueError(f"Missing required columns: {missing}")
+    df = df.rename(columns=column_mapping)
 
-    df["session_minutes"] = pd.to_numeric(
-        df["session_minutes"], errors="coerce"
-    )
-    df["switch_count"] = pd.to_numeric(
-        df["switch_count"], errors="coerce"
-    )
+    required = [
+        "session_minutes",
+        "switch_count",
+        "interruptions"
+    ]
 
-    if "error_count" in df.columns:
-        df["error_count"] = pd.to_numeric(
-            df["error_count"], errors="coerce"
-        ).fillna(0)
-    else:
-        df["error_count"] = 0
+    missing = [
+        col for col in required
+        if col not in df.columns
+    ]
+
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {missing}"
+        )
+
+    # Convert activity columns into numeric values.
+    numeric_columns = [
+        "session_minutes",
+        "switch_count",
+        "interruptions"
+    ]
+
+    for column in numeric_columns:
+        df[column] = pd.to_numeric(
+            df[column], errors="coerce"
+        )
 
     df = df.dropna(
-        subset=["session_minutes", "switch_count"]
+        subset=numeric_columns
     ).copy()
 
     df = df[
         (df["session_minutes"] >= 0)
         & (df["switch_count"] >= 0)
+        & (df["interruptions"] >= 0)
     ].copy()
 
     if df.empty:
         return None
 
+    # Calculate task switches per hour.
     df["switches_per_hour"] = df.apply(
         lambda row: calculate_switch_frequency(
             row["switch_count"],
-            row["session_minutes"],
-        ) if row["session_minutes"] > 0 else 0,
-        axis=1,
+            row["session_minutes"]
+        ),
+        axis=1
     )
 
+    # Calculate focus indicator.
     df["focus_indicator"] = df.apply(
         lambda row: classify_focus(
             row["session_minutes"],
-            row["switches_per_hour"],
+            row["switches_per_hour"]
         ),
-        axis=1,
+        axis=1
     )
 
+    # Estimate cognitive load using interruptions.
     df["cognitive_load"] = df.apply(
         lambda row: estimate_cognitive_load(
             row["switches_per_hour"],
-            row["error_count"],
-            row["session_minutes"],
+            row["interruptions"],
+            row["session_minutes"]
         ),
-        axis=1,
+        axis=1
     )
 
     return df
