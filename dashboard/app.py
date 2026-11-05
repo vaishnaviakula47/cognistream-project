@@ -3,7 +3,7 @@ import tempfile
 
 import pandas as pd
 import streamlit as st
-
+from dashboard.activity_monitor_view import show_activity_monitor
 from src.main import run_pipeline
 
 st.set_page_config(
@@ -116,3 +116,8 @@ else:
 
 else:
 st.info("Upload a CSV file to view analytics.")
+st.divider()
+
+st.title("Developer Activity Monitoring")
+
+show_activity_monitor()
