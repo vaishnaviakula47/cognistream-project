@@ -101,5 +101,4 @@ else:
 
 st.divider()
 st.title("Developer Activity Monitoring")
-
-show_activity_monitor()
+show_activity_monitor(df if uploaded_file is not None else None)
