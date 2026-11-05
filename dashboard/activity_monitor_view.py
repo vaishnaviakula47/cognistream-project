@@ -1,28 +1,20 @@
+
 import streamlit as st
 import pandas as pd
-import os
 
 
-def show_activity_monitor():
+def show_activity_monitor(df=None):
 
     st.header("Developer Activity Monitoring")
 
-    file_path = "developer_activity.csv"
-
-    if not os.path.exists(file_path):
-        st.info("No activity records available.")
-        return
-
-    df = pd.read_csv(file_path)
-
-    if df.empty:
-        st.warning("Activity file is empty.")
+    if df is None or df.empty:
+        st.info("Upload a developer activity CSV to view monitoring.")
         return
 
     required_columns = [
         "switch_count",
-        "error_count",
-        "break_count",
+        "interruptions",
+        "break_minutes",
         "session_minutes"
     ]
 
@@ -40,10 +32,7 @@ def show_activity_monitor():
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric(
-        "Total Sessions",
-        len(df)
-    )
+    col1.metric("Total Sessions", len(df))
 
     col2.metric(
         "Total Task Switches",
@@ -51,21 +40,16 @@ def show_activity_monitor():
     )
 
     col3.metric(
-        "Total Errors",
-        int(df["error_count"].sum())
+        "Total Interruptions",
+        int(df["interruptions"].sum())
     )
 
     st.subheader("Developer Activity Records")
 
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
+    st.dataframe(df, use_container_width=True)
 
     st.subheader("Break Analysis")
-
-    st.bar_chart(df["break_count"])
+    st.bar_chart(df["break_minutes"])
 
     st.subheader("Session Duration")
-
     st.bar_chart(df["session_minutes"])
