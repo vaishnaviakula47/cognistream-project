@@ -1,14 +1,19 @@
+"""
+CogniStream - Activity Pipeline
+"""
+
 import os
 import pandas as pd
 
+from src.data_processor import clean_activity_data
 from src.trend_analysis import analyze_activity_trends
 
 
-def load_activity_records(file_path="developer_activity.csv"):
+def load_activity_records(file_path):
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(
-            "Developer activity file not found"
+            "Activity dataset not found."
         )
 
     df = pd.read_csv(file_path)
@@ -16,24 +21,30 @@ def load_activity_records(file_path="developer_activity.csv"):
     if df.empty:
         return None
 
-    return df
+    return clean_activity_data(df)
 
 
-def generate_activity_trends(file_path="developer_activity.csv"):
+def generate_activity_trends(file_path):
 
     df = load_activity_records(file_path)
 
     if df is None:
         return None
 
-    trends = analyze_activity_trends(df)
+    # Match the actual sample CSV column names.
+    df = df.rename(columns={
+        "coding_minutes": "session_minutes",
+        "context_switches": "switch_count"
+    })
 
-    return trends
+    return analyze_activity_trends(df)
 
 
 if __name__ == "__main__":
 
-    result = generate_activity_trends()
+    result = generate_activity_trends(
+        "data/sample_activity.csv"
+    )
 
     if result is not None:
         print(result)
