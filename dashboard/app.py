@@ -4,7 +4,7 @@ import tempfile
 
 import pandas as pd
 import streamlit as st
-
+from dashboard.data_quality_view import show_data_quality
 from dashboard.activity_monitor_view import show_activity_monitor
 from src.main import run_pipeline
 
@@ -102,3 +102,4 @@ else:
 st.divider()
 st.title("Developer Activity Monitoring")
 show_activity_monitor(df if uploaded_file is not None else None)
+show_data_quality(df if uploaded_file is not None else None)
