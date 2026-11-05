@@ -1,4 +1,3 @@
-
 """
 CogniStream - Data Processing Module
 """
@@ -7,27 +6,36 @@ import pandas as pd
 
 
 def load_activity_data(file_path):
-    """Load developer activity data from a CSV file."""
+    """Load developer activity data from CSV or TSV."""
+
     try:
-        return pd.read_csv(file_path)
+        df = pd.read_csv(file_path, sep=None, engine="python")
+        return df
 
     except FileNotFoundError:
-        raise FileNotFoundError("Dataset file not found.")
+        raise FileNotFoundError(
+            "Dataset file not found."
+        )
 
     except pd.errors.EmptyDataError:
-        raise ValueError("Dataset file is empty.")
+        raise ValueError(
+            "Dataset file is empty."
+        )
 
 
 def clean_activity_data(df):
     """Clean and validate the activity dataset."""
+
     if df is None:
         return None
 
-    df = df.drop_duplicates().copy()
+    df = df.copy()
 
     df.columns = (
-        df.columns.str.strip().str.lower()
+        df.columns.astype(str).str.strip().str.lower()
     )
+
+    df = df.drop_duplicates()
 
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(
