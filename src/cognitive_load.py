@@ -1,15 +1,21 @@
 """
-Cognistream - Cognitive Load Estimation
+CogniStream - Cognitive Load Estimation
 """
+
 
 def estimate_cognitive_load(
     switches_per_hour,
-    error_count,
+    interruption_count,
     session_minutes
 ):
+    """
+    Estimate cognitive load using developer activity indicators.
+    These rules are illustrative, not scientifically validated.
+    """
+
     if (
         switches_per_hour < 0
-        or error_count < 0
+        or interruption_count < 0
         or session_minutes < 0
     ):
         return "Invalid Input"
@@ -21,9 +27,9 @@ def estimate_cognitive_load(
     elif switches_per_hour >= 5:
         score += 1
 
-    if error_count >= 10:
+    if interruption_count >= 10:
         score += 2
-    elif error_count >= 5:
+    elif interruption_count >= 5:
         score += 1
 
     if session_minutes >= 120:
