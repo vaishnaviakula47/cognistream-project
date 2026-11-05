@@ -1,5 +1,5 @@
 """
-Cognistream - Data Validation Module
+CogniStream - Data Validation Module
 """
 
 import pandas as pd
@@ -7,7 +7,7 @@ import pandas as pd
 REQUIRED_COLUMNS = [
     "session_minutes",
     "switch_count",
-    "error_count"
+    "interruptions"
 ]
 
 
@@ -17,6 +17,11 @@ def validate_activity_data(df):
         return None
 
     df = df.copy()
+
+    # Normalize column names
+    df.columns = (
+        df.columns.str.strip().str.lower()
+    )
 
     # Check required columns
     missing = [
@@ -43,10 +48,10 @@ def validate_activity_data(df):
     # Remove negative values
     df = df[
         (df[REQUIRED_COLUMNS] >= 0).all(axis=1)
-    ]
+    ].copy()
 
     return df.reset_index(drop=True)
 
 
 if __name__ == "__main__":
-    print("Cognistream data validation ready.")
+    print("CogniStream data validation ready.")
